@@ -1,11 +1,22 @@
+import "../global/global.css"
+import "./index.css"
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "./firebase.js"
-const app = document.getElementById('app');
+import { db } from "../global/firebase.js"
 const video = document.getElementById('video')
 const container = document.getElementById('container')
+const come = document.getElementById('come')
+const leave = document.getElementById('leave')
 var peer = new Peer();
 const url = new URL(location.href);
 const v = url.searchParams.get('v');
+
+
+function checkTheRoom(){
+    if(!v){
+        alert('You don\'t have a room number')
+        location.href = './start'
+    }
+}
 
 
 async function startGetPeer(stream){
@@ -19,39 +30,50 @@ async function startGetPeer(stream){
     })
 }
 
+async function addMeToDatabase(id){
+    try{
+        let docRef = doc(db, "room", v);
+        let docSnap = await getDoc(docRef);
+        let data = docSnap.data().user
+        await setDoc(doc(db, 'room', v), {
+            user: [
+                ...data,
+                id
+            ]
+        });
+    }catch(e){
+        alert('The room id is incorrect!')
+        location.href = './start'
+    }
+}
 
 peer.on('open', async function (id) {
-    app.innerText = `My id is : ${id} My room is ${v}`
-    const docRef = doc(db, "room", v);
-    const docSnap = await getDoc(docRef);
-    let data = docSnap.data().user
-    await setDoc(doc(db, 'room', v), {
-        user: [
-            ...data,
-            id
-        ]
-    });
+    // When the peer open start searching the member in the database
+    startGetPeer(video.srcObject)
+    addMeToDatabase(id)
 });
+
+function getCallEvent(stream){
+    peer.on('call', data => {
+        data.answer(stream)
+        data.on('stream', remoteStream => {
+            come.play()
+            let videoNew = document.createElement('video')
+            newVideo(data.peer, videoNew, remoteStream)
+            checkOnline(videoNew)
+        })
+    })
+}
 
 async function getCameraAndSendStream() {
     let constructor = {
         video: true,
         audio: true
     }
-
     try {
         let stream = await navigator.mediaDevices.getUserMedia(constructor)
         video.srcObject = stream
-        startGetPeer(stream)
-        peer.on('call', async data => {
-            console.log('some one call me');
-            data.answer(stream)
-            data.on('stream', remoteStream => {
-                let videoNew = document.createElement('video')
-                newVideo(data.peer, videoNew, remoteStream)
-                checkOnline(videoNew)
-            })
-        })
+        getCallEvent(stream)
     } catch (e) {
         console.error(e);
     }
@@ -59,6 +81,7 @@ async function getCameraAndSendStream() {
 }
 
 function checkOnline(video) {
+    // if the video tag doesn't play for 3 second it will be disappear
     let videoCurrent = video.currentTime;
     let leaveState = false
     setInterval(async () => {
@@ -66,10 +89,10 @@ function checkOnline(video) {
             return
         }
         let videoCheck = video.currentTime
-        if (videoCurrent == videoCheck) {
-            console.log('left');
+        if (videoCurrent == videoCheck) {     
             video.style.display = 'none'
             leaveState = true
+            leave.play()
         } else {
             videoCurrent = video.currentTime
         }
@@ -77,17 +100,15 @@ function checkOnline(video) {
 }
 
 
-async function callStream(remoteId, mediaStream) {
+function callStream(remoteId, mediaStream) {
     console.log('I call ' + remoteId);
     let callStream = peer.call(remoteId, mediaStream)
     callStream.on('stream', remoteStream => {
-        console.log('hi');
+        come.play()
         let videoNew = document.createElement('video')
         newVideo(remoteId, videoNew, remoteStream)
         checkOnline(videoNew)
     })
-
-
 }
 
 function newVideo(remoteId, video, remoteStream) {
@@ -95,6 +116,9 @@ function newVideo(remoteId, video, remoteStream) {
     if (checkVideoElement) return
     video.dataset.code = remoteId
     video.classList.add('video')
+    video.classList.add('border')
+    video.classList.add('border-white')
+    video.classList.add('border-4')
     video.srcObject = remoteStream
     video.dataset.code = remoteId
     video.autoplay = true
@@ -103,6 +127,4 @@ function newVideo(remoteId, video, remoteStream) {
 
 
 getCameraAndSendStream()
-
-
-
+checkTheRoom()

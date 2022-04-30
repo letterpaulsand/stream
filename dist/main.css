@@ -1,0 +1,31 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+html, body{
+    height: 100%;
+    width: 100%;
+}
+.state{
+    font-size: 25px;
+    padding: 1rem;
+    background-color: rgb(117, 76, 76);
+    color: white;
+}
+
+.video{
+    height: 25rem;
+    display: inline;
+}
+
+.container{
+    height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+
+/*# sourceMappingURL=main.css.map*/
