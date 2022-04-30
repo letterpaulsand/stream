@@ -1,16 +1,36 @@
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "./firebase.js"
 const app = document.getElementById('app');
 const video = document.getElementById('video')
-const input = document.getElementById('streamId')
-const btn = document.getElementById('btn')
 const container = document.getElementById('container')
 var peer = new Peer();
-const video1 = document.getElementById('video1')
 const url = new URL(location.href);
 const v = url.searchParams.get('v');
 
 
-peer.on('open', function (id) {
-    app.innerText = `My id is : ${id}`
+async function startGetPeer(stream){
+    const docRef = doc(db, "room", v);
+    const docSnap = await getDoc(docRef);
+    let data = docSnap.data().user
+    console.log(data);
+    data.map(item=>{
+        console.log('ji');
+        callStream(item, stream)
+    })
+}
+
+
+peer.on('open', async function (id) {
+    app.innerText = `My id is : ${id} My room is ${v}`
+    const docRef = doc(db, "room", v);
+    const docSnap = await getDoc(docRef);
+    let data = docSnap.data().user
+    await setDoc(doc(db, 'room', v), {
+        user: [
+            ...data,
+            id
+        ]
+    });
 });
 
 async function getCameraAndSendStream() {
@@ -22,17 +42,15 @@ async function getCameraAndSendStream() {
     try {
         let stream = await navigator.mediaDevices.getUserMedia(constructor)
         video.srcObject = stream
+        startGetPeer(stream)
         peer.on('call', async data => {
+            console.log('some one call me');
             data.answer(stream)
-            data.on('stream', remoteStream=>{
+            data.on('stream', remoteStream => {
                 let videoNew = document.createElement('video')
                 newVideo(data.peer, videoNew, remoteStream)
                 checkOnline(videoNew)
             })
-            
-        })
-        btn.addEventListener('click', () => {
-            callStream(input.value, stream)
         })
     } catch (e) {
         console.error(e);
@@ -60,7 +78,7 @@ function checkOnline(video) {
 
 
 async function callStream(remoteId, mediaStream) {
-    console.log('I call someone', input.value);
+    console.log('I call ' + remoteId);
     let callStream = peer.call(remoteId, mediaStream)
     callStream.on('stream', remoteStream => {
         console.log('hi');
@@ -68,6 +86,8 @@ async function callStream(remoteId, mediaStream) {
         newVideo(remoteId, videoNew, remoteStream)
         checkOnline(videoNew)
     })
+
+
 }
 
 function newVideo(remoteId, video, remoteStream) {
