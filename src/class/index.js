@@ -6,32 +6,41 @@ const video = document.getElementById('video')
 const container = document.getElementById('container')
 const come = document.getElementById('come')
 const leave = document.getElementById('leave')
-var peer = new Peer();
+var peer = new Peer({
+    debug: 3,
+    config: {
+        iceServers: [{
+            urls: 'stun:stun.l.google.com:19302',
+        }],
+        iceTransportPolicy: 'all'
+    },
+    secure: true
+});
 const url = new URL(location.href);
 const v = url.searchParams.get('v');
 
 
-function checkTheRoom(){
-    if(!v){
+function checkTheRoom() {
+    if (!v) {
         alert('You don\'t have a room number')
         location.href = './start'
     }
 }
 
 
-async function startGetPeer(stream){
+async function startGetPeer(stream) {
     const docRef = doc(db, "room", v);
     const docSnap = await getDoc(docRef);
     let data = docSnap.data().user
     console.log(data);
-    data.map(item=>{
+    data.map(item => {
         console.log('ji');
         callStream(item, stream)
     })
 }
 
-async function addMeToDatabase(id){
-    try{
+async function addMeToDatabase(id) {
+    try {
         let docRef = doc(db, "room", v);
         let docSnap = await getDoc(docRef);
         let data = docSnap.data().user
@@ -41,7 +50,7 @@ async function addMeToDatabase(id){
                 id
             ]
         });
-    }catch(e){
+    } catch (e) {
         alert('The room id is incorrect!')
         location.href = './start'
     }
@@ -53,7 +62,7 @@ peer.on('open', async function (id) {
     addMeToDatabase(id)
 });
 
-function getCallEvent(stream){
+function getCallEvent(stream) {
     peer.on('call', data => {
         data.answer(stream)
         data.on('stream', remoteStream => {
@@ -89,7 +98,7 @@ function checkOnline(video) {
             return
         }
         let videoCheck = video.currentTime
-        if (videoCurrent == videoCheck) {     
+        if (videoCurrent == videoCheck) {
             video.style.display = 'none'
             leaveState = true
             leave.play()
