@@ -39,6 +39,22 @@ async function startGetPeer(stream) {
     })
 }
 
+async function delThePeople(userId){
+    const docRef = doc(db, "room", v);
+    const docSnap = await getDoc(docRef);
+    let data = docSnap.data().user
+    let sendArr = data
+    data.map(async(item, i) => {
+        if(item !== userId) return
+        sendArr.splice(i, 1)
+        await setDoc(doc(db, 'room', v), {
+            user: [
+                ...sendArr
+            ]
+        });
+    })
+}
+
 async function addMeToDatabase(id) {
     try {
         let docRef = doc(db, "room", v);
@@ -99,6 +115,7 @@ function checkOnline(video) {
         }
         let videoCheck = video.currentTime
         if (videoCurrent == videoCheck) {
+            delThePeople(video.dataset.code)
             video.style.display = 'none'
             leaveState = true
             leave.play()
