@@ -1,0 +1,1 @@
+{"version":3,"file":"main.css","mappings":"AAAA;IACI,SAAS;IACT,UAAU;AACd;;AAEA;IACI,YAAY;IACZ,WAAW;AACf,C","sources":["webpack://videostream/./src/global/global.css"],"sourcesContent":["*{\r\n    margin: 0;\r\n    padding: 0;\r\n}\r\n\r\nhtml, body{\r\n    height: 100%;\r\n    width: 100%;\r\n}"],"names":[],"sourceRoot":""}

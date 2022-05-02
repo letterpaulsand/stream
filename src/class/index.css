@@ -1,19 +1,8 @@
-*{
-    margin: 0;
-    padding: 0;
-}
-
-html body{
-    height: 100%;
-    width: 100%;
-}
-
 .state{
     font-size: 25px;
     padding: 1rem;
     background-color: rgb(117, 76, 76);
     color: white;
-    height: 2rem;
 }
 
 .video{
