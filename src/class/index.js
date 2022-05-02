@@ -37,22 +37,30 @@ async function startGetPeer(stream) {
     })
 }
 
-async function changeTheCurrentPeopleList(arrOfCurrentPeople){
-    if(!id) return
-    console.log(arrOfCurrentPeople);
-    await setDoc(doc(db, 'room', v), {
-        user: [
-            ...arrOfCurrentPeople,
-            id
-        ]
-    });
+async function delThePeople(userId){
+    const docRef = doc(db, "room", v);
+    const docSnap = await getDoc(docRef);
+    let data = docSnap.data().user
+    let sendArr = data
+    data.map(async(item, i) => {
+        if(item !== userId) return
+        sendArr.splice(i, 1)
+        await setDoc(doc(db, 'room', v), {
+            user: [
+                ...sendArr
+            ]
+        });
+    })
 }
-
 
 async function addMeToDatabase(id) {
     try {
+        let docRef = doc(db, "room", v);
+        let docSnap = await getDoc(docRef);
+        let data = docSnap.data().user
         await setDoc(doc(db, 'room', v), {
             user: [
+                ...data,
                 id
             ]
         });
@@ -105,6 +113,7 @@ function checkOnline(video) {
         }
         let videoCheck = video.currentTime
         if (videoCurrent == videoCheck) {
+            delThePeople(video.dataset.code)
             video.style.display = 'none'
             leaveState = true
             leave.play()
@@ -121,9 +130,6 @@ function callStream(remoteId, mediaStream) {
     callStream.on('stream', remoteStream => {
         come.play()
         let videoNew = document.createElement('video')
-        addListArr.unshift(remoteId)
-        console.log(addListArr);
-        changeTheCurrentPeopleList(addListArr)
         newVideo(remoteId, videoNew, remoteStream)
         checkOnline(videoNew)
     })
