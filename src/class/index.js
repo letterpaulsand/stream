@@ -6,6 +6,8 @@ const video = document.getElementById('video')
 const container = document.getElementById('container')
 const come = document.getElementById('come')
 const leave = document.getElementById('leave')
+const muteBtn = document.getElementById('audio-btn')
+const closeCamera = document.getElementById('video-btn')
 var peer = new Peer({
     debug: 3,
     config: {
@@ -37,13 +39,13 @@ async function startGetPeer(stream) {
     })
 }
 
-async function delThePeople(userId){
+async function delThePeople(userId) {
     const docRef = doc(db, "room", v);
     const docSnap = await getDoc(docRef);
     let data = docSnap.data().user
     let sendArr = data
-    data.map(async(item, i) => {
-        if(item !== userId) return
+    data.map(async (item, i) => {
+        if (item !== userId) return
         sendArr.splice(i, 1)
         await setDoc(doc(db, 'room', v), {
             user: [
@@ -55,15 +57,20 @@ async function delThePeople(userId){
 
 async function addMeToDatabase(id) {
     try {
-        let docRef = doc(db, "room", v);
-        let docSnap = await getDoc(docRef);
-        let data = docSnap.data().user
-        await setDoc(doc(db, 'room', v), {
-            user: [
-                ...data,
-                id
-            ]
-        });
+        // let docRef = doc(db, "room", v);
+        // let docSnap = await getDoc(docRef);
+        // let data = docSnap.data().user
+        // await setDoc(doc(db, 'room', v), {
+        //     user: [
+        //         ...data,
+        //         id
+        //     ]
+        // });
+        // rdb.ref('user').set({
+        //     user: "hihihhhh"
+        // })
+        console.log('ok');
+
     } catch (e) {
         alert('The room id is incorrect!')
         location.href = './start'
@@ -85,6 +92,9 @@ function getCallEvent(stream) {
             newVideo(data.peer, videoNew, remoteStream)
             checkOnline(videoNew)
         })
+        data.on('error', () => {
+            console.log('someone disconnect');
+        })
     })
 }
 
@@ -96,6 +106,15 @@ async function getCameraAndSendStream() {
     try {
         let stream = await navigator.mediaDevices.getUserMedia(constructor)
         video.srcObject = stream
+        closeCamera.addEventListener('click', async () => {
+            constructor = {
+                video: false,
+                audio: true
+            }
+            stream = await navigator.mediaDevices.getUserMedia(constructor)
+            getCallEvent(stream)
+            video.srcObject = stream
+        })
         getCallEvent(stream)
     } catch (e) {
         console.error(e);
@@ -120,7 +139,7 @@ function checkOnline(video) {
         } else {
             videoCurrent = video.currentTime
         }
-    }, 3000)
+    }, 5000)
 }
 
 
@@ -133,6 +152,7 @@ function callStream(remoteId, mediaStream) {
         newVideo(remoteId, videoNew, remoteStream)
         checkOnline(videoNew)
     })
+
 }
 
 function newVideo(remoteId, video, remoteStream) {
