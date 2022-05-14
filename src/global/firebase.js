@@ -12,10 +12,10 @@ const firebaseConfig = {
   projectId: "stream-ae76e",
   storageBucket: "stream-ae76e.appspot.com",
   messagingSenderId: "814806442143",
-  appId: "1:814806442143:web:3f1afad83bf4fd2c4502aa"
+  appId: "1:814806442143:web:3f1afad83bf4fd2c4502aa",
+  databaseURL: "https://stream-ae76e-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const rdb = getDatabase('https://stream-ae76e-default-rtdb.asia-southeast1.firebasedatabase.app')
+export const db = getDatabase(app)

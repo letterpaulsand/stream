@@ -1,13 +1,14 @@
 import "../global/global.css"
 import "./index.css"
-import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../global/firebase.js"
+import { set, ref, push, get, child, onDisconnect } from "firebase/database";
 const video = document.getElementById('video')
 const container = document.getElementById('container')
 const come = document.getElementById('come')
 const leave = document.getElementById('leave')
 const muteBtn = document.getElementById('audio-btn')
 const closeCamera = document.getElementById('video-btn')
+
 var peer = new Peer({
     debug: 3,
     config: {
@@ -30,47 +31,37 @@ function checkTheRoom() {
 
 
 async function startGetPeer(stream) {
-    const docRef = doc(db, "room", v);
-    const docSnap = await getDoc(docRef);
-    let data = docSnap.data().user
-    console.log(data);
-    data.map(item => {
-        callStream(item, stream)
-    })
+    const dbRef = ref(db);
+
+    get(child(dbRef, v + '/user')).then(snapshot => {
+        if (snapshot.exists()) {
+            let data = snapshot.val()
+            let dataArr = Object.values(data).map(item => item.id);
+            dataArr.map(item=>{
+                callStream(item, stream)
+            })
+            console.log(dataArr, data);
+        } else {
+            console.log("No data available");
+        }
+    }).catch((error) => {
+        console.error(error);
+    });
 }
 
-async function delThePeople(userId) {
-    const docRef = doc(db, "room", v);
-    const docSnap = await getDoc(docRef);
-    let data = docSnap.data().user
-    let sendArr = data
-    data.map(async (item, i) => {
-        if (item !== userId) return
-        sendArr.splice(i, 1)
-        await setDoc(doc(db, 'room', v), {
-            user: [
-                ...sendArr
-            ]
-        });
-    })
-}
 
 async function addMeToDatabase(id) {
     try {
-        // let docRef = doc(db, "room", v);
-        // let docSnap = await getDoc(docRef);
-        // let data = docSnap.data().user
-        // await setDoc(doc(db, 'room', v), {
-        //     user: [
-        //         ...data,
-        //         id
-        //     ]
-        // });
-        // rdb.ref('user').set({
-        //     user: "hihihhhh"
-        // })
+        let postListRef = ref(db, v + '/user');
+        let newPostRef = push(postListRef);
+        let postKey = newPostRef.key;
+        disconnect(postKey)
+        set(newPostRef, {
+            id: id,
+            camera: true,
+            audio: true
+        });
         console.log('ok');
-
     } catch (e) {
         alert('The room id is incorrect!')
         location.href = './start'
@@ -79,6 +70,7 @@ async function addMeToDatabase(id) {
 
 peer.on('open', async function (id) {
     // When the peer open start searching the member in the database
+    video.dataset.id = id
     startGetPeer(video.srcObject)
     addMeToDatabase(id)
 });
@@ -90,7 +82,6 @@ function getCallEvent(stream) {
             come.play()
             let videoNew = document.createElement('video')
             newVideo(data.peer, videoNew, remoteStream)
-            checkOnline(videoNew)
         })
         data.on('error', () => {
             console.log('someone disconnect');
@@ -122,35 +113,23 @@ async function getCameraAndSendStream() {
 
 }
 
-function checkOnline(video) {
-    // if the video tag doesn't play for 3 second it will be disappear
-    let videoCurrent = video.currentTime;
-    let leaveState = false
-    setInterval(async () => {
-        if (leaveState) {
-            return
-        }
-        let videoCheck = video.currentTime
-        if (videoCurrent == videoCheck) {
-            delThePeople(video.dataset.code)
-            video.style.display = 'none'
-            leaveState = true
-            leave.play()
-        } else {
-            videoCurrent = video.currentTime
-        }
-    }, 5000)
+function disconnect(key){
+    console.log(key);
+    const presenceRef = ref(db, v + '/user/' + key);
+    onDisconnect(presenceRef).set(null);
 }
 
 
+
+
 function callStream(remoteId, mediaStream) {
+    if(video.dataset.id === remoteId) return
     console.log('I call ' + remoteId);
     let callStream = peer.call(remoteId, mediaStream)
     callStream.on('stream', remoteStream => {
         come.play()
         let videoNew = document.createElement('video')
         newVideo(remoteId, videoNew, remoteStream)
-        checkOnline(videoNew)
     })
 
 }
