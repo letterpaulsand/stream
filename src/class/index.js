@@ -18,7 +18,7 @@ const shortName = uniqueNamesGenerator({
     separator: '-'
 });
 let firstTime = false;
-
+let firstTime1 = false;
 var peer = new Peer({
     debug: 3,
     config: {
@@ -164,6 +164,7 @@ function listenNewPersonAdd(){
     let newPerson = ref(db, v + '/new')
     onValue(newPerson, snapshot => {
         let data = snapshot.val()
+        if(!data) return
         let sendArr = [data.id, data.audio, data.camera, data.userName, data.imageURL]
         callStream(sendArr, video.srcObject)
     })
@@ -245,6 +246,10 @@ function changeSomeOneVideoToImage(id, toWhat){
 function checkSomeOneChangeTheStatus(id){
     const starCountRef = ref(db, v + '/status');
     onValue(starCountRef, snapshot => {
+        if(!firstTime1){
+            firstTime1 = true
+            return
+        }
         const data = snapshot.val()
         console.log(data);
         let changeVideoWindow = document.querySelector(`[data-code='${data.id}']`)
