@@ -182,14 +182,13 @@ function newVideo(remoteId, remoteStream) {
     video.dataset.code = remoteId[0]
     videoContainer.dataset.codename = remoteId[0] 
     video.srcObject = remoteStream
-    video.autoplay = true
     videoContainer.appendChild(video)
     videoContainer.appendChild(videoText)
     container.appendChild(videoContainer)
     video.muted = remoteId[1]
     changeSomeOneVideoToImage(remoteId[0], remoteId[2])
-    
-
+    video.autoplay = true
+    video.play()
 }
 
 function dealClosingCamera(key, id) {
@@ -238,8 +237,10 @@ function changeSomeOneVideoToImage(id, toWhat){
     console.log(changeWindow);
     if(!toWhat){
         changeWindow.style.display = 'none'
+        changeWindow.autoplay = true
     }else{
         changeWindow.style.display = 'inline'
+        changeWindow.autoplay = true
     }
 }
 
@@ -255,6 +256,7 @@ function checkSomeOneChangeTheStatus(id){
         let changeVideoWindow = document.querySelector(`[data-code='${data.id}']`)
         if(id != data.id){
             changeVideoWindow.muted = data.audio
+            changeVideoWindow.autoplay = true
             console.log('I change');
         }else{
             console.log(id, data.id);
