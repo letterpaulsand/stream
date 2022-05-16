@@ -7,6 +7,7 @@ import { RandomPicture } from "random-picture"
 
 const video = document.getElementById('video')
 const container = document.getElementById('container')
+const myVideoContainer = document.getElementById('myVideoContainer')
 const come = document.getElementById('come')
 const leave = document.getElementById('leave')
 const muteBtn = document.getElementById('audio-btn')
@@ -33,7 +34,6 @@ const v = url.searchParams.get('v');
 
 function checkTheRoom() {
     if (!v) {
-        alert('You don\'t have a room number')
         location.href = './start'
     }
 }
@@ -57,6 +57,12 @@ async function startGetPeer(stream) {
     });
 }
 
+function setMyBackgroundAndName(background, name){
+    let textContent = myVideoContainer.getElementsByTagName('p')[0]
+    textContent.innerText = name
+    myVideoContainer.style.backgroundImage = `url(${background})`
+}
+
 
 async function addMeToDatabase(id) {
     try {
@@ -64,6 +70,7 @@ async function addMeToDatabase(id) {
         let postListRef = ref(db, v + '/user');
         let newPostRef = push(postListRef);
         let postKey = newPostRef.key;
+        setMyBackgroundAndName(image.url, shortName)
         disconnect(postKey, id)
         dealClosingCamera(postKey, id)
         set(newPostRef, {
@@ -73,7 +80,7 @@ async function addMeToDatabase(id) {
             userName: shortName,
             imageURL: image.url
         });
-        set(ref(db, `${v}/status`), {
+        set(ref(db, `${v}/new`), {
             id: id,
             camera: false,
             audio: true,
@@ -98,12 +105,6 @@ peer.on('open', async function (id) {
 function getCallEvent(stream) {
     peer.on('call', data => {
         data.answer(stream)
-        data.on('stream', remoteStream => {
-            come.play()
-            let videoNew = document.createElement('video')
-            let videoContainer = document.createElement('div')
-            newVideo(data.peer, videoNew, videoContainer, remoteStream, 'text')
-        })
     })
 }
 
@@ -142,6 +143,95 @@ function checkSomeoneDisconnect() {
     });
 }
 
+function closeTheOtherWindow(id) {
+    let closeWindow = document.querySelector(`[data-codename='${id}']`)
+    leave.play()
+    console.log(id);
+    closeWindow.remove()
+}
+
+function callStream(remoteId, mediaStream) {
+    if (video.dataset.code === remoteId[0]) return
+    console.log('I call ' + remoteId[0]);
+    let callStream = peer.call(remoteId[0], mediaStream)
+    callStream.on('stream', remoteStream => {
+        come.play()
+        newVideo(remoteId, remoteStream)
+    })
+}
+
+function listenNewPersonAdd(){
+    let newPerson = ref(db, v + '/new')
+    onValue(newPerson, snapshot => {
+        let data = snapshot.val()
+        let sendArr = [data.id, data.audio, data.camera, data.userName, data.imageURL]
+        callStream(sendArr, video.srcObject)
+    })
+}
+
+function newVideo(remoteId, remoteStream) {
+    let checkVideoElement = document.querySelector(`[data-code='${remoteId[0]}']`)
+    if (checkVideoElement) return
+    let video = document.createElement('video')
+    let videoContainer = document.createElement('div')
+    let videoText = document.createElement('p')
+    videoText.innerText = remoteId[3]
+    videoContainer.classList.add('videoContainer')
+    videoContainer.style.backgroundImage = `url(${remoteId[4]})`
+    video.dataset.code = remoteId[0]
+    videoContainer.dataset.codename = remoteId[0] 
+    video.srcObject = remoteStream
+    video.autoplay = true
+    videoContainer.appendChild(video)
+    videoContainer.appendChild(videoText)
+    container.appendChild(videoContainer)
+    video.muted = remoteId[1]
+    changeSomeOneVideoToImage(remoteId[0], remoteId[2])
+    
+
+}
+
+function dealClosingCamera(key, id) {
+    closeCamera.addEventListener('click', () => {
+        let status = closeCamera.dataset.status == 'true' ? false : true;
+        set(ref(db, `${v}/status`), {
+            id: id,
+            camera: status,
+            audio: muteBtn.dataset.status == 'true' ? true : false,
+            userName: true,
+            imageURL: true
+        })
+        set(ref(db, `${v}/user/${key}/camera`), status)
+        if(status){
+            closeCamera.classList.remove('bi-camera-video-off-fill')
+            closeCamera.classList.add('bi-camera-video-fill')
+        }else{
+            closeCamera.classList.remove('bi-camera-video-fill')
+            closeCamera.classList.add('bi-camera-video-off-fill')
+        }     
+        closeCamera.dataset.status = status.toString()
+    })
+    muteBtn.addEventListener('click', () => {
+        let status = muteBtn.dataset.status == 'true' ? false : true;
+        set(ref(db, `${v}/status`), {
+            id: id,
+            camera: closeCamera.dataset.status == 'true' ? true : false,
+            audio: status,
+            userName: true,
+            imageURL: true
+        })
+        set(ref(db, `${v}/user/${key}/audio`), status)
+        if(status){
+            muteBtn.classList.remove('bi-mic-fill')
+            muteBtn.classList.add('bi-mic-mute-fill')
+        }else{
+            muteBtn.classList.remove('bi-mic-mute-fill')
+            muteBtn.classList.add('bi-mic-fill')
+        }  
+        muteBtn.dataset.status = status.toString()
+    })
+}
+
 function changeSomeOneVideoToImage(id, toWhat){
     let changeWindow = document.querySelector(`[data-code='${id}']`)
     if(!toWhat){
@@ -159,78 +249,8 @@ function checkSomeOneChangeTheStatus(id){
         let changeVideoWindow = document.querySelector(`[data-code='${data.id}']`)
         if(id != data.id){
             changeVideoWindow.muted = data.audio
-            alert('hihihih')
         }
         changeSomeOneVideoToImage(data.id, data.camera)
-    })
-}
-
-function closeTheOtherWindow(id) {
-    let closeWindow = document.querySelector(`[data-code='${id}']`)
-    leave.play()
-    console.log(id);
-    closeWindow.remove()
-}
-
-function callStream(remoteId, mediaStream) {
-    if (video.dataset.id === remoteId[0]) return
-    console.log('I call ' + remoteId[0]);
-    let callStream = peer.call(remoteId[0], mediaStream)
-    callStream.on('stream', remoteStream => {
-        come.play()
-        let videoNew = document.createElement('video')
-        let videoContainer = document.createElement('div')
-        newVideo(remoteId, videoNew, videoContainer, remoteStream, 'arr')
-    })
-}
-
-function newVideo(remoteId, video, videoContainer, remoteStream, type) {
-    let checkVideoElement = document.querySelector(`[data-code='${type == 'text' ? remoteId : remoteId[0]}']`)
-    if (checkVideoElement) return
-    video.dataset.code = type == 'text' ? remoteId : remoteId[0]
-    video.classList.add('video')
-    video.classList.add('border')
-    video.classList.add('border-white')
-    video.classList.add('border-4')
-    video.srcObject = remoteStream
-    video.autoplay = true
-    video.appendChild(videoContainer)
-    container.appendChild(video)
-    if(type == 'text'){
-        video.muted = true
-        changeSomeOneVideoToImage(remoteId, false)
-    }else{
-        video.muted = remoteId[1]
-        changeSomeOneVideoToImage(remoteId[0], remoteId[2])
-    }
-    
-}
-
-function dealClosingCamera(key, id) {
-    closeCamera.addEventListener('click', () => {
-        let status = closeCamera.dataset.status == 'true' ? false : true;
-        set(ref(db, `${v}/status`), {
-            id: id,
-            camera: status,
-            audio: muteBtn.dataset.status == 'true' ? true : false,
-            userName: true,
-            imageURL: true
-        })
-        set(ref(db, `${v}/user/${key}/camera`), status)
-        console.log(closeCamera.dataset.status);
-        closeCamera.dataset.status = status.toString()
-    })
-    muteBtn.addEventListener('click', () => {
-        let status = muteBtn.dataset.status == 'true' ? false : true;
-        set(ref(db, `${v}/status`), {
-            id: id,
-            camera: closeCamera.dataset.status == 'true' ? true : false,
-            audio: status,
-            userName: true,
-            imageURL: true
-        })
-        set(ref(db, `${v}/user/${key}/audio`), status)
-        muteBtn.dataset.status = status.toString()
     })
 }
 
@@ -239,3 +259,4 @@ function dealClosingCamera(key, id) {
 getCameraAndSendStream()
 checkTheRoom()
 checkSomeoneDisconnect()
+listenNewPersonAdd()
