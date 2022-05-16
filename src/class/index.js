@@ -49,7 +49,6 @@ async function startGetPeer(stream) {
             dataArr.map(item => {
                 callStream(item, stream)
             })
-            console.log(dataArr, data);
         } else {
             console.log("No data available");
         }
@@ -70,10 +69,17 @@ async function addMeToDatabase(id) {
         set(newPostRef, {
             id: id,
             camera: false,
-            audio: false,
+            audio: true,
             userName: shortName,
             imageURL: image.url
         });
+        set(ref(db, `${v}/status`), {
+            id: id,
+            camera: false,
+            audio: true,
+            userName: shortName,
+            imageURL: image.url
+        })
         console.log('ok');
     } catch (e) {
         alert('The room id is incorrect!')
@@ -83,9 +89,10 @@ async function addMeToDatabase(id) {
 
 peer.on('open', async function (id) {
     // When the peer open start searching the member in the database
-    video.dataset.id = id
+    video.dataset.code = id
     startGetPeer(video.srcObject)
     addMeToDatabase(id)
+    checkSomeOneChangeTheStatus(id)
 });
 
 function getCallEvent(stream) {
@@ -94,7 +101,8 @@ function getCallEvent(stream) {
         data.on('stream', remoteStream => {
             come.play()
             let videoNew = document.createElement('video')
-            newVideo(data.peer, videoNew, remoteStream)
+            let videoContainer = document.createElement('div')
+            newVideo(data.peer, videoNew, videoContainer, remoteStream, 'text')
         })
     })
 }
@@ -135,25 +143,32 @@ function checkSomeoneDisconnect() {
 }
 
 function changeSomeOneVideoToImage(id, toWhat){
-    if(toWhat){
-        let changeWindow = document.querySelector(`[data-code='${id}']`)
+    let changeWindow = document.querySelector(`[data-code='${id}']`)
+    if(!toWhat){
         changeWindow.style.display = 'none'
+    }else{
+        changeWindow.style.display = 'inline'
     }
 }
 
-function checkSomeOneChangeTheStatus(){
+function checkSomeOneChangeTheStatus(id){
     const starCountRef = ref(db, v + '/status');
     onValue(starCountRef, snapshot => {
         const data = snapshot.val()
+        console.log(data.id);
         let changeVideoWindow = document.querySelector(`[data-code='${data.id}']`)
-        changeVideoWindow.muted = data.audio
-        
+        if(id != data.id){
+            changeVideoWindow.muted = data.audio
+            alert('hihihih')
+        }
+        changeSomeOneVideoToImage(data.id, data.camera)
     })
 }
 
 function closeTheOtherWindow(id) {
     let closeWindow = document.querySelector(`[data-code='${id}']`)
     leave.play()
+    console.log(id);
     closeWindow.remove()
 }
 
@@ -164,53 +179,58 @@ function callStream(remoteId, mediaStream) {
     callStream.on('stream', remoteStream => {
         come.play()
         let videoNew = document.createElement('video')
-        newVideo(remoteId, videoNew, remoteStream)
+        let videoContainer = document.createElement('div')
+        newVideo(remoteId, videoNew, videoContainer, remoteStream, 'arr')
     })
 }
 
-function newVideo(remoteId, video, remoteStream) {
-    let checkVideoElement = document.querySelector(`[data-code='${remoteId}']`)
+function newVideo(remoteId, video, videoContainer, remoteStream, type) {
+    let checkVideoElement = document.querySelector(`[data-code='${type == 'text' ? remoteId : remoteId[0]}']`)
     if (checkVideoElement) return
-    video.dataset.code = remoteId[0]
+    video.dataset.code = type == 'text' ? remoteId : remoteId[0]
     video.classList.add('video')
     video.classList.add('border')
     video.classList.add('border-white')
     video.classList.add('border-4')
     video.srcObject = remoteStream
     video.autoplay = true
-    if(!remoteId[1]){
-        video.muted = false
-    }
-    if(!remoteId[2]){
-        video.muted = false
-    }
+    video.appendChild(videoContainer)
     container.appendChild(video)
+    if(type == 'text'){
+        video.muted = true
+        changeSomeOneVideoToImage(remoteId, false)
+    }else{
+        video.muted = remoteId[1]
+        changeSomeOneVideoToImage(remoteId[0], remoteId[2])
+    }
+    
 }
 
 function dealClosingCamera(key, id) {
     closeCamera.addEventListener('click', () => {
         let status = closeCamera.dataset.status == 'true' ? false : true;
-        set(ref(db, `${v}/user/${key}/camera`), status)
         set(ref(db, `${v}/status`), {
             id: id,
             camera: status,
-            audio: muteBtn.dataset.status,
+            audio: muteBtn.dataset.status == 'true' ? true : false,
             userName: true,
             imageURL: true
         })
-        muteBtn.dataset.status = status
+        set(ref(db, `${v}/user/${key}/camera`), status)
+        console.log(closeCamera.dataset.status);
+        closeCamera.dataset.status = status.toString()
     })
     muteBtn.addEventListener('click', () => {
         let status = muteBtn.dataset.status == 'true' ? false : true;
-        set(ref(db, `${v}/user/${key}/audio`), status)
         set(ref(db, `${v}/status`), {
             id: id,
-            camera: closeCamera.dataset.status,
+            camera: closeCamera.dataset.status == 'true' ? true : false,
             audio: status,
             userName: true,
             imageURL: true
         })
-        muteBtn.dataset.status = status
+        set(ref(db, `${v}/user/${key}/audio`), status)
+        muteBtn.dataset.status = status.toString()
     })
 }
 
