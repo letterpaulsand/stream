@@ -234,6 +234,7 @@ function dealClosingCamera(key, id) {
 
 function changeSomeOneVideoToImage(id, toWhat){
     let changeWindow = document.querySelector(`[data-code='${id}']`)
+    console.log(changeWindow);
     if(!toWhat){
         changeWindow.style.display = 'none'
     }else{
@@ -245,10 +246,13 @@ function checkSomeOneChangeTheStatus(id){
     const starCountRef = ref(db, v + '/status');
     onValue(starCountRef, snapshot => {
         const data = snapshot.val()
-        console.log(data.id);
+        console.log(data);
         let changeVideoWindow = document.querySelector(`[data-code='${data.id}']`)
         if(id != data.id){
             changeVideoWindow.muted = data.audio
+            console.log('I change');
+        }else{
+            console.log(id, data.id);
         }
         changeSomeOneVideoToImage(data.id, data.camera)
     })
