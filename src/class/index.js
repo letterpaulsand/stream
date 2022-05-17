@@ -89,20 +89,15 @@ async function addMeToDatabase(id) {
         })
         console.log('ok');
     } catch (e) {
-        alert('The room id is incorrect!')
+        alert(id)
         location.href = './start'
     }
 }
-
-
-peer.on('open', async function (id) {
+peer.on('open', function (id) {
     // When the peer open start searching the member in the database
     video.dataset.code = id
-    addMeToDatabase(id)
-    checkSomeOneChangeTheStatus(id)
+    doFunction(id)
 });
-
-
 
 
 function getCallEvent(stream) {
@@ -278,17 +273,20 @@ function checkSomeOneChangeTheStatus(id) {
     })
 }
 
-async function doFunction() {
+async function doFunction(id) {
     checkTheRoom()
     checkSomeoneDisconnect()
     console.log('11111');
     await getCameraAndSendStream()
     console.log('22222');
+    console.log(video.srcObject);
     startGetPeer(video.srcObject)
+    addMeToDatabase(id)
+    checkSomeOneChangeTheStatus(id)
     listenNewPersonAdd()
 }
 
-doFunction()
+
 
 
 
