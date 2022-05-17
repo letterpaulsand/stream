@@ -41,7 +41,7 @@ function checkTheRoom() {
 
 async function startGetPeer(stream) {
     const dbRef = ref(db);
-
+    console.log('hihihihih');
     get(child(dbRef, v + '/user')).then(snapshot => {
         if (snapshot.exists()) {
             let data = snapshot.val()
