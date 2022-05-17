@@ -24,23 +24,33 @@ var peer = new Peer({
     config: {
         iceServers: [
             {
-              urls: "stun:openrelay.metered.ca:80",
+                url: "stun:stun.l.google.com:19302"
             },
             {
-              urls: "turn:openrelay.metered.ca:80",
-              username: "openrelayproject",
-              credential: "openrelayproject",
+                url: 'turn:numb.viagenie.ca',
+                credential: 'muazkh',
+                username: 'webrtc@live.com'
             },
             {
-              urls: "turn:openrelay.metered.ca:443",
-              username: "openrelayproject",
-              credential: "openrelayproject",
+                url: 'turn:192.158.29.39:3478?transport=udp',
+                credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+                username: '28224511:1379330808'
             },
             {
-              urls: "turn:openrelay.metered.ca:443?transport=tcp",
-              username: "openrelayproject",
-              credential: "openrelayproject",
+                url: 'turn:192.158.29.39:3478?transport=tcp',
+                credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+                username: '28224511:1379330808'
             },
+            {
+                url: 'turn:turn.bistri.com:80',
+                credential: 'homeo',
+                username: 'homeo'
+             },
+             {
+                url: 'turn:turn.anyfirewall.com:443?transport=tcp',
+                credential: 'webrtc',
+                username: 'webrtc'
+            }
           ],
         iceTransportPolicy: 'all'
     },
