@@ -94,13 +94,17 @@ async function addMeToDatabase(id) {
     }
 }
 
-peer.on('open', async function (id) {
-    // When the peer open start searching the member in the database
-    video.dataset.code = id
-    startGetPeer(video.srcObject)
-    addMeToDatabase(id)
-    checkSomeOneChangeTheStatus(id)
-});
+function getMyId(){
+    peer.on('open', async function (id) {
+        // When the peer open start searching the member in the database
+        video.dataset.code = id
+        startGetPeer(video.srcObject)
+        addMeToDatabase(id)
+        checkSomeOneChangeTheStatus(id)
+    });
+}
+
+
 
 function getCallEvent(stream) {
     peer.on('call', data => {
@@ -275,9 +279,15 @@ function checkSomeOneChangeTheStatus(id) {
     })
 }
 
+async function doFunction(){
+    await getCameraAndSendStream()
+    getMyId()
+    checkTheRoom()
+    checkSomeoneDisconnect()
+    listenNewPersonAdd()
+}
+
+doFunction()
 
 
-getCameraAndSendStream()
-checkTheRoom()
-checkSomeoneDisconnect()
-listenNewPersonAdd()
+
