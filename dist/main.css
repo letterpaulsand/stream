@@ -9,6 +9,26 @@ html, body{
     width: 100%;
 }
 
+.state{
+    font-size: 25px;
+    padding: 1rem;
+    background-color: rgb(117, 76, 76);
+    color: white;
+}
+
+.video{
+    height: 25rem;
+    display: inline;
+}
+
+.container{
+    height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 .videoContainer{
     height: 15rem;
     width: 25rem;
@@ -57,25 +77,6 @@ i{
     color: white;
     font-size: 25px;
     border-radius: 50%;
-}
-.state{
-    font-size: 25px;
-    padding: 1rem;
-    background-color: rgb(117, 76, 76);
-    color: white;
-}
-
-.video{
-    height: 25rem;
-    display: inline;
-}
-
-.container{
-    height: calc(100vh - 2rem);
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 1rem;
 }
 
 

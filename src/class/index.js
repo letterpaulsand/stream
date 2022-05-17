@@ -57,7 +57,7 @@ async function startGetPeer(stream) {
     });
 }
 
-function setMyBackgroundAndName(background, name){
+function setMyBackgroundAndName(background, name) {
     let textContent = myVideoContainer.getElementsByTagName('p')[0]
     textContent.innerText = name
     myVideoContainer.style.backgroundImage = `url(${background})`
@@ -114,11 +114,17 @@ async function getCameraAndSendStream() {
         audio: true
     }
     try {
-        let stream = await navigator.mediaDevices.getUserMedia(constructor)
-        video.srcObject = stream
-        getCallEvent(stream)
+        if (location.hash.substring(1) == 'share') {
+            let stream = await navigator.mediaDevices.getDisplayMedia(constructor)
+            video.srcObject = stream
+            getCallEvent(stream)
+        } else {
+            let stream = await navigator.mediaDevices.getUserMedia(constructor)
+            video.srcObject = stream
+            getCallEvent(stream)
+        }
     } catch (e) {
-        console.error(e);
+        alert('Please allow your computer open the camera');
     }
 }
 
@@ -160,11 +166,11 @@ function callStream(remoteId, mediaStream) {
     })
 }
 
-function listenNewPersonAdd(){
+function listenNewPersonAdd() {
     let newPerson = ref(db, v + '/new')
     onValue(newPerson, snapshot => {
         let data = snapshot.val()
-        if(!data) return
+        if (!data) return
         let sendArr = [data.id, data.audio, data.camera, data.userName, data.imageURL]
         callStream(sendArr, video.srcObject)
     })
@@ -180,7 +186,7 @@ function newVideo(remoteId, remoteStream) {
     videoContainer.classList.add('videoContainer')
     videoContainer.style.backgroundImage = `url(${remoteId[4]})`
     video.dataset.code = remoteId[0]
-    videoContainer.dataset.codename = remoteId[0] 
+    videoContainer.dataset.codename = remoteId[0]
     video.srcObject = remoteStream
     videoContainer.appendChild(video)
     videoContainer.appendChild(videoText)
@@ -188,7 +194,11 @@ function newVideo(remoteId, remoteStream) {
     video.muted = remoteId[1]
     changeSomeOneVideoToImage(remoteId[0], remoteId[2])
     video.autoplay = true
-    video.play()
+    let isPlaying = video.currentTime > 0 && !video.paused && !video.ended
+        && video.readyState > video.HAVE_CURRENT_DATA;
+    if (!isPlaying) {
+        video.play();
+    }
 }
 
 function dealClosingCamera(key, id) {
@@ -202,13 +212,13 @@ function dealClosingCamera(key, id) {
             imageURL: true
         })
         set(ref(db, `${v}/user/${key}/camera`), status)
-        if(status){
+        if (status) {
             closeCamera.classList.remove('bi-camera-video-off-fill')
             closeCamera.classList.add('bi-camera-video-fill')
-        }else{
+        } else {
             closeCamera.classList.remove('bi-camera-video-fill')
             closeCamera.classList.add('bi-camera-video-off-fill')
-        }     
+        }
         closeCamera.dataset.status = status.toString()
     })
     muteBtn.addEventListener('click', () => {
@@ -221,44 +231,44 @@ function dealClosingCamera(key, id) {
             imageURL: true
         })
         set(ref(db, `${v}/user/${key}/audio`), status)
-        if(status){
+        if (status) {
             muteBtn.classList.remove('bi-mic-fill')
             muteBtn.classList.add('bi-mic-mute-fill')
-        }else{
+        } else {
             muteBtn.classList.remove('bi-mic-mute-fill')
             muteBtn.classList.add('bi-mic-fill')
-        }  
+        }
         muteBtn.dataset.status = status.toString()
     })
 }
 
-function changeSomeOneVideoToImage(id, toWhat){
+function changeSomeOneVideoToImage(id, toWhat) {
     let changeWindow = document.querySelector(`[data-code='${id}']`)
     console.log(changeWindow);
-    if(!toWhat){
+    if (!toWhat) {
         changeWindow.style.display = 'none'
         changeWindow.autoplay = true
-    }else{
+    } else {
         changeWindow.style.display = 'inline'
         changeWindow.autoplay = true
     }
 }
 
-function checkSomeOneChangeTheStatus(id){
+function checkSomeOneChangeTheStatus(id) {
     const starCountRef = ref(db, v + '/status');
     onValue(starCountRef, snapshot => {
-        if(!firstTime1){
+        if (!firstTime1) {
             firstTime1 = true
             return
         }
         const data = snapshot.val()
         console.log(data);
         let changeVideoWindow = document.querySelector(`[data-code='${data.id}']`)
-        if(id != data.id){
+        if (id != data.id) {
             changeVideoWindow.muted = data.audio
             changeVideoWindow.autoplay = true
             console.log('I change');
-        }else{
+        } else {
             console.log(id, data.id);
         }
         changeSomeOneVideoToImage(data.id, data.camera)
