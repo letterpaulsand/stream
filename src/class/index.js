@@ -274,13 +274,17 @@ function dealClosingCamera(key, id) {
 function changeSomeOneVideoToImage(id, toWhat) {
     let changeWindow = document.querySelector(`[data-code='${id}']`)
     console.log(changeWindow);
-    if (!toWhat) {
-        changeWindow.style.display = 'none'
-        changeWindow.autoplay = true
-    } else {
-        changeWindow.style.display = 'inline'
-        changeWindow.autoplay = true
-    }
+    changeWindow.style.display = 'none'
+    setTimeout(()=>{
+        if (!toWhat) {
+            changeWindow.style.display = 'none'
+            changeWindow.autoplay = true
+        } else {
+            changeWindow.style.display = 'inline'
+            changeWindow.autoplay = true
+        }
+    }, 10)
+    
 }
 
 function checkSomeOneChangeTheStatus(id) {
