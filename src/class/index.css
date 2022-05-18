@@ -10,7 +10,7 @@
     display: inline;
 }
 
-.container{
+.contain{
     height: calc(100vh - 5rem);
     padding: 2rem;
     display: flex;
@@ -61,6 +61,7 @@
     position: absolute;
     top: 0;
     left: 0;
+    padding: 3rem 2rem 3rem 2rem;
 }
 
 .hidding-block-content{
@@ -69,6 +70,12 @@
     background-color: white;
     border-radius: 0.5rem;
     padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    max-width: 100%;
+    max-height: 100%;
+    min-height: 600px;
 }
 
 

@@ -15,6 +15,11 @@ const closeCamera = document.getElementById('video-btn')
 const configBlock = document.getElementById('hidding-block')
 const close = document.getElementById('close')
 const dropList = document.getElementById('list')
+const myName = document.getElementById('myName')
+const myImage = document.getElementById('myImage')
+const audioList = document.getElementById('audioList')
+const videoList = document.getElementById('videoList')
+
 const shortName = uniqueNamesGenerator({
     dictionaries: [adjectives, animals, colors],
     length: 3,
@@ -22,6 +27,7 @@ const shortName = uniqueNamesGenerator({
 });
 let firstTime = false;
 let firstTime1 = false;
+let firstTime2 = false;
 var peer = new Peer({
     debug: 3,
     config: {
@@ -48,13 +54,13 @@ var peer = new Peer({
                 url: 'turn:turn.bistri.com:80',
                 credential: 'homeo',
                 username: 'homeo'
-             },
-             {
+            },
+            {
                 url: 'turn:turn.anyfirewall.com:443?transport=tcp',
                 credential: 'webrtc',
                 username: 'webrtc'
             }
-          ],
+        ],
         iceTransportPolicy: 'all'
     },
     secure: true
@@ -71,7 +77,6 @@ function checkTheRoom() {
 
 async function startGetPeer(stream) {
     const dbRef = ref(db);
-    console.log('hihihihih');
     get(child(dbRef, v + '/user')).then(snapshot => {
         if (snapshot.exists()) {
             let data = snapshot.val()
@@ -79,6 +84,7 @@ async function startGetPeer(stream) {
             dataArr.map(item => {
                 callStream(item, stream)
             })
+            console.log(dataArr);
         } else {
             console.log("No data available");
         }
@@ -103,19 +109,20 @@ async function addMeToDatabase(id) {
         setMyBackgroundAndName(image.url, shortName)
         disconnect(postKey, id)
         dealClosingCamera(postKey, id)
+        changeUserProfile(postKey, id)
         set(newPostRef, {
             id: id,
             camera: false,
             audio: true,
             userName: shortName,
-            imageURL: image.url
+            imageURL: `url(${image.url})`
         });
         set(ref(db, `${v}/new`), {
             id: id,
             camera: false,
             audio: true,
             userName: shortName,
-            imageURL: image.url
+            imageURL: `url(${image.url})`
         })
         console.log('ok');
     } catch (e) {
@@ -126,8 +133,22 @@ async function addMeToDatabase(id) {
 peer.on('open', function (id) {
     // When the peer open start searching the member in the database
     video.dataset.code = id
+    myVideoContainer.dataset.codename = id
     doFunction(id)
 });
+
+function changeUserProfile(postKey, id) {
+    myName.addEventListener('keyup', e => {
+        if (e.keyCode != 13) return
+        changeMyName(postKey, myName.value, id)
+        myName.value = ''
+    })
+    myImage.addEventListener('keyup', e => {
+        if (e.keyCode != 13) return
+        changeMyImg(postKey, myImage.value, id)
+        myImage.value = ''
+    })
+}
 
 
 function getCallEvent(stream) {
@@ -148,11 +169,31 @@ async function getCameraAndSendStream() {
             getCallEvent(stream)
         } else {
             let stream = await navigator.mediaDevices.getUserMedia(constructor)
+            window.srcObject = stream
             video.srcObject = stream
             getCallEvent(stream)
+            let videoTrack = stream.getVideoTracks();
+            let audioTrack = stream.getAudioTracks();
+            let myAllTrack = stream.getTracks()
+            for (var i = 1; i <= videoTrack.length; i++) {
+                let newDeviceVideo = document.createElement('li')
+                let deviceLabelVideo = document.createTextNode(videoTrack[i - 1].label)
+                newDeviceVideo.appendChild(deviceLabelVideo)
+                newDeviceVideo.classList.add('dropdown-item')
+                videoList.appendChild(newDeviceVideo)
+            }
+            for (var i = 1; i <= audioTrack.length; i++) {
+                let newDeviceAudio = document.createElement('li')
+                let deviceLabelAudio = document.createTextNode(audioTrack[i - 1].label)
+                newDeviceAudio.appendChild(deviceLabelAudio)
+                newDeviceAudio.classList.add('dropdown-item')
+                audioList.appendChild(newDeviceAudio)
+            }
         }
+
     } catch (e) {
         alert('Please allow your computer open the camera');
+        console.error(e);
     }
 }
 
@@ -197,6 +238,10 @@ function callStream(remoteId, mediaStream) {
 function listenNewPersonAdd() {
     let newPerson = ref(db, v + '/new')
     onValue(newPerson, snapshot => {
+        if(!firstTime2){
+            firstTime2 = true
+            return
+        }
         let data = snapshot.val()
         if (!data) return
         let sendArr = [data.id, data.audio, data.camera, data.userName, data.imageURL]
@@ -207,12 +252,13 @@ function listenNewPersonAdd() {
 function newVideo(remoteId, remoteStream) {
     let checkVideoElement = document.querySelector(`[data-code='${remoteId[0]}']`)
     if (checkVideoElement) return
+    console.log(remoteId);
     let video = document.createElement('video')
     let videoContainer = document.createElement('div')
     let videoText = document.createElement('p')
     videoText.innerText = remoteId[3]
     videoContainer.classList.add('videoContainer')
-    videoContainer.style.backgroundImage = `url(${remoteId[4]})`
+    videoContainer.style.backgroundImage = remoteId[4]
     video.dataset.code = remoteId[0]
     videoContainer.dataset.codename = remoteId[0]
     video.srcObject = remoteStream
@@ -223,22 +269,21 @@ function newVideo(remoteId, remoteStream) {
     container.appendChild(videoContainer)
     video.muted = remoteId[1]
     changeSomeOneVideoToImage(remoteId[0], remoteId[2])
-    setTimeout(()=>{
+    setTimeout(() => {
         video.play()
     }, 0)
-    
-
 }
 
 function dealClosingCamera(key, id) {
     closeCamera.addEventListener('click', () => {
+        let theOtherContainer = document.querySelector(`[data-codename='${id}']`)
         let status = closeCamera.dataset.status == 'true' ? false : true;
         set(ref(db, `${v}/status`), {
             id: id,
             camera: status,
             audio: muteBtn.dataset.status == 'true' ? true : false,
-            userName: true,
-            imageURL: true
+            userName: theOtherContainer.querySelector('p').innerText,
+            imageURL: theOtherContainer.style.backgroundImage
         })
         set(ref(db, `${v}/user/${key}/camera`), status)
         if (status) {
@@ -275,7 +320,7 @@ function changeSomeOneVideoToImage(id, toWhat) {
     let changeWindow = document.querySelector(`[data-code='${id}']`)
     console.log(changeWindow);
     changeWindow.style.display = 'none'
-    setTimeout(()=>{
+    setTimeout(() => {
         if (!toWhat) {
             changeWindow.style.display = 'none'
             changeWindow.autoplay = true
@@ -284,8 +329,32 @@ function changeSomeOneVideoToImage(id, toWhat) {
             changeWindow.autoplay = true
         }
     }, 10)
-    
 }
+
+function changeMyName(postKey, name, id) {
+    let backgroundImage = document.querySelector(`[data-codename='${id}']`)
+    set(ref(db, `${v}/user/${postKey}/userName`), name)
+    set(ref(db, `${v}/status`), {
+        id: id,
+        userName: name,
+        imageURL: backgroundImage.style.backgroundImage,
+        camera: closeCamera.dataset.status == 'true' ? true : false,
+        audio: muteBtn.dataset.status == 'true' ? true : false
+    })
+}
+
+function changeMyImg(postKey, url, id) {
+    let textNode = document.querySelector(`[data-codename='${id}']`).querySelector('p')
+    set(ref(db, `${v}/user/${postKey}/imageURL`), url)
+    set(ref(db, `${v}/status`), {
+        id: id,
+        userName: textNode.innerText,
+        imageURL: url,
+        camera: closeCamera.dataset.status == 'true' ? true : false,
+        audio: muteBtn.dataset.status == 'true' ? true : false
+    })
+}
+
 
 function checkSomeOneChangeTheStatus(id) {
     const starCountRef = ref(db, v + '/status');
@@ -295,24 +364,27 @@ function checkSomeOneChangeTheStatus(id) {
             return
         }
         const data = snapshot.val()
-        console.log(data);
         let changeVideoWindow = document.querySelector(`[data-code='${data.id}']`)
+        let changeVideoWindowContainer = document.querySelector(`[data-codename='${data.id}']`)
         if (id != data.id) {
             changeVideoWindow.muted = data.audio
-            changeVideoWindow.autoplay = true
-            console.log('I change');
-        } else {
-            console.log(id, data.id);
         }
+        let userName = changeVideoWindowContainer.querySelector('p')
+        changeVideoWindow.autoplay = true
+        userName.innerText = data.userName
+        changeVideoWindowContainer.style.backgroundImage = `url(${data.imageURL})`
         changeSomeOneVideoToImage(data.id, data.camera)
     })
 }
 
-function someButton(){
-    close.addEventListener('click', ()=>{
+function someButton() {
+    configBlock.addEventListener('click', ()=>{
         configBlock.style.display = 'none'
     })
-    dropList.addEventListener('click', ()=>{
+    close.addEventListener('click', () => {
+        configBlock.style.display = 'none'
+    })
+    dropList.addEventListener('click', () => {
         configBlock.style.display = 'flex'
     })
 }
@@ -322,10 +394,7 @@ function someButton(){
 async function doFunction(id) {
     checkTheRoom()
     checkSomeoneDisconnect()
-    console.log('11111');
     await getCameraAndSendStream()
-    console.log('22222');
-    console.log(video.srcObject);
     startGetPeer(video.srcObject)
     addMeToDatabase(id)
     checkSomeOneChangeTheStatus(id)
