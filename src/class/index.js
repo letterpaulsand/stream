@@ -12,6 +12,9 @@ const come = document.getElementById('come')
 const leave = document.getElementById('leave')
 const muteBtn = document.getElementById('audio-btn')
 const closeCamera = document.getElementById('video-btn')
+const configBlock = document.getElementById('hidding-block')
+const close = document.getElementById('close')
+const dropList = document.getElementById('list')
 const shortName = uniqueNamesGenerator({
     dictionaries: [adjectives, animals, colors],
     length: 3,
@@ -213,17 +216,18 @@ function newVideo(remoteId, remoteStream) {
     video.dataset.code = remoteId[0]
     videoContainer.dataset.codename = remoteId[0]
     video.srcObject = remoteStream
+    video.load()
+    video.autoplay = true
     videoContainer.appendChild(video)
     videoContainer.appendChild(videoText)
     container.appendChild(videoContainer)
     video.muted = remoteId[1]
     changeSomeOneVideoToImage(remoteId[0], remoteId[2])
-    video.autoplay = true
-    let isPlaying = video.currentTime > 0 && !video.paused && !video.ended
-        && video.readyState > video.HAVE_CURRENT_DATA;
-    if (!isPlaying) {
-        video.play();
-    }
+    setTimeout(()=>{
+        video.play()
+    }, 0)
+    
+
 }
 
 function dealClosingCamera(key, id) {
@@ -300,6 +304,17 @@ function checkSomeOneChangeTheStatus(id) {
     })
 }
 
+function someButton(){
+    close.addEventListener('click', ()=>{
+        configBlock.style.display = 'none'
+    })
+    dropList.addEventListener('click', ()=>{
+        configBlock.style.display = 'flex'
+    })
+}
+
+
+
 async function doFunction(id) {
     checkTheRoom()
     checkSomeoneDisconnect()
@@ -313,6 +328,7 @@ async function doFunction(id) {
     listenNewPersonAdd()
 }
 
+someButton()
 
 
 

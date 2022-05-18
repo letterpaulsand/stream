@@ -22,7 +22,8 @@ html, body{
 }
 
 .container{
-    height: calc(100vh - 2rem);
+    height: calc(100vh - 5rem);
+    padding: 2rem;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -30,38 +31,57 @@ html, body{
 }
 
 .videoContainer{
-    height: 15rem;
     width: 25rem;
-    border-radius: 1rem;
+    height: 15rem;
+    border-radius: 0.5rem;
     background-repeat: no-repeat;
     background-size: cover;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.781);
     background-blend-mode: multiply;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: flex-end;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 .videoContainer video{
     display: none;
-    width: 25rem;
-    border-radius: 1rem;
-    position: absolute;
+    height: calc(100% - 2rem);
 }
 
 .videoContainer p{
+    text-align: center;
     color: rgb(175, 175, 175);
     font-size: 18px;
-    position: relative;
-    top: 100px;
-    margin: 1rem;
+    height: 2rem;
+    width: 100%;
+    background-color: white;
+    padding: 0;
+    margin: 0;
 }
 
-.container{
-    height: calc(100vh - 5rem)!important;
+
+.hidding-block{
+    height: 100%;
+    width: 100%;
+    display: none;
+    background-color: rgba(0, 0, 0, 0.24);
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
+
+.hidding-block-content{
+    height: 50rem;
+    width: 50rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
 
 .control{
     height: 5rem;
@@ -77,6 +97,13 @@ i{
     color: white;
     font-size: 25px;
     border-radius: 50%;
+}
+
+.bi-x{
+    color: black!important;
+    margin: 0;
+    padding: 0;
+    font-size: 30px!important;
 }
 
 
