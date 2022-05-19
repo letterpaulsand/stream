@@ -156,29 +156,61 @@ function changeUserProfile(postKey, id) {
 }
 
 
-function getCallEvent(stream, id) {
+function getCallEvent(stream) {
     peer.on('call', data => {
         data.answer(stream)
+        let theOtherVideo = document.querySelector(`[data-code='${data.peer}']`)
+        if(!theOtherVideo) return
+        data.on('stream', stream => {
+            theOtherVideo.srcObject = stream
+        })
     })
 }
 
+
+
+async function putTheNameIntoTheOption() {
+    function getTheCameraAndAudioLabel() {
+        return navigator.mediaDevices.enumerateDevices();
+    }
+    let deviceInfos = await getTheCameraAndAudioLabel()
+    window.deviceInfos = deviceInfos
+    for (let deviceInfo of deviceInfos) {
+        let newDeviceVideo = document.createElement('option')
+        newDeviceVideo.value = deviceInfo.deviceId
+        if (deviceInfo.kind === 'audioinput') {
+            newDeviceVideo.text = deviceInfo.label || `Microphone ${audioSelect.length + 1}`;
+            audioList.appendChild(newDeviceVideo);
+        } else if (deviceInfo.kind === 'videoinput') {
+            newDeviceVideo.text = deviceInfo.label || `Camera ${videoSelect.length + 1}`;
+            videoList.appendChild(newDeviceVideo);
+        }
+    }
+}
+
 async function getCameraAndSendStream(id) {
+    if (window.stream) {
+        window.stream.getTracks().forEach(track => {
+            track.stop();
+        });
+    }
     let constructor = {
-        video: true,
-        audio: true
+        video: videoList.value ? { deviceId: videoList.value } : true,
+        audio: audioList.value ? { deviceId: audioList.value } : true
     }
     try {
         if (location.hash.substring(1) == 'share') {
             let stream = await navigator.mediaDevices.getDisplayMedia(constructor)
             video.srcObject = stream
-            getCallEvent(stream, id)
+            getCallEvent(stream)
         } else {
             let stream = await navigator.mediaDevices.getUserMedia(constructor)
-            window.srcObject = stream
+            window.stream = stream
             video.srcObject = stream
-            getCallEvent(stream, id)
-            let videoTrack = stream.getVideoTracks();
-            let audioTrack = stream.getAudioTracks();
+            getCallEvent(stream)
+            if(videoList.value || audioList.value){
+                startGetPeer(video.srcObject)
+            }
             let myAllTrack = stream.getTracks()
             let myStatusRef = ref(db, v + '/status');
             myAllTrack.forEach(track => {
@@ -193,27 +225,13 @@ async function getCameraAndSendStream(id) {
                         track.enabled = false
                         console.log(data);
                     })
-                }else{
+                } else {
                     myAllTrack.forEach(track => {
                         track.enabled = true
                         console.log('live');
                     })
                 }
             });
-            for (var i = 1; i <= videoTrack.length; i++) {
-                let newDeviceVideo = document.createElement('li')
-                let deviceLabelVideo = document.createTextNode(videoTrack[i - 1].label)
-                newDeviceVideo.appendChild(deviceLabelVideo)
-                newDeviceVideo.classList.add('dropdown-item')
-                videoList.appendChild(newDeviceVideo)
-            }
-            for (var i = 1; i <= audioTrack.length; i++) {
-                let newDeviceAudio = document.createElement('li')
-                let deviceLabelAudio = document.createTextNode(audioTrack[i - 1].label)
-                newDeviceAudio.appendChild(deviceLabelAudio)
-                newDeviceAudio.classList.add('dropdown-item')
-                audioList.appendChild(newDeviceAudio)
-            }
         }
 
     } catch (e) {
@@ -342,6 +360,12 @@ function dealClosingCamera(key, id) {
         }
         muteBtn.dataset.status = status.toString()
     })
+    audioList.addEventListener('change', () => {
+        getCameraAndSendStream(id)
+    })
+    videoList.addEventListener('change', () => {
+        getCameraAndSendStream(id)
+    })
 }
 
 function changeSomeOneVideoToImage(id, toWhat) {
@@ -451,6 +475,7 @@ function listenNewChat() {
 
 async function doFunction(id) {
     checkTheRoom()
+    putTheNameIntoTheOption()
     checkSomeoneDisconnect()
     listenNewChat()
     await getCameraAndSendStream(id)
@@ -461,7 +486,3 @@ async function doFunction(id) {
 }
 
 someButton()
-
-
-
-

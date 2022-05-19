@@ -28,24 +28,12 @@
                 <h1>Setting</h1>
                 <p class="text-secondary">Change your name and background image</p>
             </div>
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                    Video input
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" id="videoList">
-
-                </ul>
-            </div>
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                    Audio input
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1" id="audioList">
-
-                </ul>
-            </div>
+            <select class="form-select" aria-label="Default select example" id="videoList">
+                <option selected>Select the Video device</option>
+            </select>
+            <select class="form-select" aria-label="Default select example" id="audioList">
+                <option selected>Select the Audio device</option>
+            </select>
             <div class="input-group mb-3">
                 <span class="input-group-text" id="basic-addon1">My name</span>
                 <input type="text" class="form-control" placeholder="Username" aria-label="Username"
