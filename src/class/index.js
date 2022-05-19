@@ -32,7 +32,7 @@ const shortName = uniqueNamesGenerator({
 let firstTime = false;
 let firstTime1 = false;
 let firstTime2 = false;
-let firstTime3 = false
+let firstTime3 = false;
 var peer = new Peer({
     debug: 3,
     config: {
@@ -156,13 +156,13 @@ function changeUserProfile(postKey, id) {
 }
 
 
-function getCallEvent(stream) {
+function getCallEvent(stream, id) {
     peer.on('call', data => {
         data.answer(stream)
     })
 }
 
-async function getCameraAndSendStream() {
+async function getCameraAndSendStream(id) {
     let constructor = {
         video: true,
         audio: true
@@ -171,15 +171,35 @@ async function getCameraAndSendStream() {
         if (location.hash.substring(1) == 'share') {
             let stream = await navigator.mediaDevices.getDisplayMedia(constructor)
             video.srcObject = stream
-            getCallEvent(stream)
+            getCallEvent(stream, id)
         } else {
             let stream = await navigator.mediaDevices.getUserMedia(constructor)
             window.srcObject = stream
             video.srcObject = stream
-            getCallEvent(stream)
+            getCallEvent(stream, id)
             let videoTrack = stream.getVideoTracks();
             let audioTrack = stream.getAudioTracks();
             let myAllTrack = stream.getTracks()
+            let myStatusRef = ref(db, v + '/status');
+            myAllTrack.forEach(track => {
+                track.enabled = false
+                console.log('ended');
+            })
+            onValue(myStatusRef, snapshot => {
+                const data = snapshot.val();
+                if (data.id != id) return
+                if (data.audio && !data.camera) {
+                    myAllTrack.forEach(track => {
+                        track.enabled = false
+                        console.log(data);
+                    })
+                }else{
+                    myAllTrack.forEach(track => {
+                        track.enabled = true
+                        console.log('live');
+                    })
+                }
+            });
             for (var i = 1; i <= videoTrack.length; i++) {
                 let newDeviceVideo = document.createElement('li')
                 let deviceLabelVideo = document.createTextNode(videoTrack[i - 1].label)
@@ -243,7 +263,7 @@ function callStream(remoteId, mediaStream) {
 function listenNewPersonAdd() {
     let newPerson = ref(db, v + '/new')
     onValue(newPerson, snapshot => {
-        if(!firstTime2){
+        if (!firstTime2) {
             firstTime2 = true
             return
         }
@@ -302,7 +322,7 @@ function dealClosingCamera(key, id) {
     })
     muteBtn.addEventListener('click', () => {
         let status = muteBtn.dataset.status == 'true' ? false : true;
-        let userContainer =  document.querySelector(`[data-codename='${id}']`)
+        let userContainer = document.querySelector(`[data-codename='${id}']`)
         let userImage = userContainer.style.backgroundImage
         let userNameNode = userContainer.querySelector('p').innerText
         set(ref(db, `${v}/status`), {
@@ -392,19 +412,19 @@ function someButton() {
     dropList.addEventListener('click', () => {
         configBlock.style.display = 'flex'
     })
-    closeChat.addEventListener('click', ()=>{
+    closeChat.addEventListener('click', () => {
         chatContainer.style.display = 'none'
     })
-    chat.addEventListener('click', ()=>{
+    chat.addEventListener('click', () => {
         console.log(1);
         chatContainer.style.display = 'flex'
     })
     chatInput.addEventListener('keyup', e => {
-        if(e.keyCode != 13) return
+        if (e.keyCode != 13) return
         sendChatToDataBase(chatInput.value)
         chatInput.value = ''
     })
-    function sendChatToDataBase(text){
+    function sendChatToDataBase(text) {
         set(ref(db, `${v}/chat`), {
             name: container.getElementsByTagName('p')[0].innerText,
             message: text
@@ -412,7 +432,7 @@ function someButton() {
     }
 }
 
-function listenNewChat(){
+function listenNewChat() {
     let chatRef = ref(db, v + '/chat');
     onValue(chatRef, snapshot => {
         if (!firstTime3) {
@@ -433,7 +453,7 @@ async function doFunction(id) {
     checkTheRoom()
     checkSomeoneDisconnect()
     listenNewChat()
-    await getCameraAndSendStream()
+    await getCameraAndSendStream(id)
     startGetPeer(video.srcObject)
     addMeToDatabase(id)
     checkSomeOneChangeTheStatus(id)
