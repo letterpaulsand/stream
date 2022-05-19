@@ -19,7 +19,11 @@ const myName = document.getElementById('myName')
 const myImage = document.getElementById('myImage')
 const audioList = document.getElementById('audioList')
 const videoList = document.getElementById('videoList')
-
+const chatContainer = document.getElementById('chat-container')
+const chat = document.getElementById('chat')
+const closeChat = document.getElementById('closeChat')
+const chatContent = document.getElementById('content')
+const chatInput = document.getElementById('chat-input')
 const shortName = uniqueNamesGenerator({
     dictionaries: [adjectives, animals, colors],
     length: 3,
@@ -28,6 +32,7 @@ const shortName = uniqueNamesGenerator({
 let firstTime = false;
 let firstTime1 = false;
 let firstTime2 = false;
+let firstTime3 = false
 var peer = new Peer({
     debug: 3,
     config: {
@@ -297,12 +302,15 @@ function dealClosingCamera(key, id) {
     })
     muteBtn.addEventListener('click', () => {
         let status = muteBtn.dataset.status == 'true' ? false : true;
+        let userContainer =  document.querySelector(`[data-codename='${id}']`)
+        let userImage = userContainer.style.backgroundImage
+        let userNameNode = userContainer.querySelector('p').innerText
         set(ref(db, `${v}/status`), {
             id: id,
             camera: closeCamera.dataset.status == 'true' ? true : false,
             audio: status,
-            userName: true,
-            imageURL: true
+            userName: userNameNode,
+            imageURL: userImage
         })
         set(ref(db, `${v}/user/${key}/audio`), status)
         if (status) {
@@ -378,14 +386,44 @@ function checkSomeOneChangeTheStatus(id) {
 }
 
 function someButton() {
-    configBlock.addEventListener('click', ()=>{
-        configBlock.style.display = 'none'
-    })
     close.addEventListener('click', () => {
         configBlock.style.display = 'none'
     })
     dropList.addEventListener('click', () => {
         configBlock.style.display = 'flex'
+    })
+    closeChat.addEventListener('click', ()=>{
+        chatContainer.style.display = 'none'
+    })
+    chat.addEventListener('click', ()=>{
+        console.log(1);
+        chatContainer.style.display = 'flex'
+    })
+    chatInput.addEventListener('keyup', e => {
+        if(e.keyCode != 13) return
+        sendChatToDataBase(chatInput.value)
+        chatInput.value = ''
+    })
+    function sendChatToDataBase(text){
+        set(ref(db, `${v}/chat`), {
+            name: container.getElementsByTagName('p')[0].innerText,
+            message: text
+        })
+    }
+}
+
+function listenNewChat(){
+    let chatRef = ref(db, v + '/chat');
+    onValue(chatRef, snapshot => {
+        if (!firstTime3) {
+            firstTime3 = true
+            return
+        }
+        const data = snapshot.val()
+        let newTextElement = document.createElement('p')
+        let newTextNode = document.createTextNode(`${data.name}: ${data.message}`)
+        newTextElement.appendChild(newTextNode)
+        chatContent.appendChild(newTextElement)
     })
 }
 
@@ -394,6 +432,7 @@ function someButton() {
 async function doFunction(id) {
     checkTheRoom()
     checkSomeoneDisconnect()
+    listenNewChat()
     await getCameraAndSendStream()
     startGetPeer(video.srcObject)
     addMeToDatabase(id)
