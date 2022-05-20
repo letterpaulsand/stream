@@ -28,6 +28,7 @@ const peopleBtn = document.getElementById('peopleBtn')
 const closeMember = document.getElementById('closeMember')
 const memberContainer = document.getElementById('member-container')
 const member = document.getElementById('member')
+const hangUp = document.getElementById('hang-up')
 const shortName = uniqueNamesGenerator({
     dictionaries: [adjectives, animals, colors],
     length: 3,
@@ -37,6 +38,7 @@ let firstTime = false;
 let firstTime1 = false;
 let firstTime2 = false;
 let firstTime3 = false;
+let joinPeople = 1;
 var peer = new Peer({
     debug: 3,
     config: {
@@ -101,6 +103,20 @@ async function startGetPeer(stream) {
     }).catch((error) => {
         console.error(error);
     });
+}
+
+function writeTheGrid(){
+    let memberLength = joinPeople
+    if(memberLength % 2 == 1){
+        if(memberLength == 1){
+            container.style.gridTemplateColumns = `repeat(1, 1fr)`
+        }
+        memberLength--
+        if(memberLength > 5){
+            memberLength = 5
+        }
+    }
+    container.style.gridTemplateColumns = `repeat(${memberLength}, 1fr)`
 }
 
 function setMyBackgroundAndName(background, name) {
@@ -293,15 +309,19 @@ function checkSomeoneDisconnect() {
             return
         } else {
             closeTheOtherWindow(data)
+            joinPeople--
+            writeTheGrid()
         }
     });
 }
 
 function closeTheOtherWindow(id) {
     let closeWindow = document.querySelector(`[data-codename='${id}']`)
+    let member = document.querySelector(`[data-member='${id}']`)
     leave.play()
     console.log(id);
     closeWindow.remove()
+    member.remove()
 }
 
 function callStream(remoteId, mediaStream) {
@@ -309,7 +329,6 @@ function callStream(remoteId, mediaStream) {
     console.log('I call ' + remoteId[0]);
     let callStream = peer.call(remoteId[0], mediaStream)
     callStream.on('stream', remoteStream => {
-        come.play()
         newVideo(remoteId, remoteStream)
     })
 }
@@ -332,6 +351,8 @@ function listenNewPersonAdd() {
 function newVideo(remoteId, remoteStream) {
     let checkVideoElement = document.querySelector(`[data-code='${remoteId[0]}']`)
     if (checkVideoElement) return
+    come.play()
+    joinPeople++
     console.log(remoteId);
     let video = document.createElement('video')
     let videoContainer = document.createElement('div')
@@ -352,6 +373,7 @@ function newVideo(remoteId, remoteStream) {
     setTimeout(() => {
         video.play()
     }, 0)
+    writeTheGrid()
 }
 
 function dealClosingCamera(key, id) {
@@ -486,6 +508,10 @@ function someButton() {
         if(e.target.value == '') return
         sendChatToDataBase(e.target.value)
         chatInput.value = ''
+    })
+    hangUp.addEventListener('click', ()=>{
+        console.log('close');
+        location.href = './close'
     })
     async function sendChatToDataBase(text) {
         await set(ref(db, `${v}/chat`), {
