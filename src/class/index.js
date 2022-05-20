@@ -24,6 +24,10 @@ const chat = document.getElementById('chat')
 const closeChat = document.getElementById('closeChat')
 const chatContent = document.getElementById('content')
 const chatInput = document.getElementById('chat-input')
+const peopleBtn = document.getElementById('peopleBtn')
+const closeMember = document.getElementById('closeMember')
+const memberContainer = document.getElementById('member-container')
+const member = document.getElementById('member')
 const shortName = uniqueNamesGenerator({
     dictionaries: [adjectives, animals, colors],
     length: 3,
@@ -88,6 +92,7 @@ async function startGetPeer(stream) {
             let dataArr = Object.values(data).map(item => [item.id, item.audio, item.camera, item.userName, item.imageURL]);
             dataArr.map(item => {
                 callStream(item, stream)
+                newTheMember(item[3], item[4], item[0])
             })
             console.log(dataArr);
         } else {
@@ -129,7 +134,6 @@ async function addMeToDatabase(id) {
             userName: shortName,
             imageURL: `url(${image.url})`
         })
-        console.log('ok');
     } catch (e) {
         alert(id)
         location.href = './start'
@@ -142,15 +146,38 @@ peer.on('open', function (id) {
     doFunction(id)
 });
 
+function newTheMember(name, url, id){
+    let checkMember = document.querySelector(`[data-member='${id}']`)
+    if(checkMember) return
+    let newMemberContent = document.createElement('div')
+    let newMemberContentName = document.createElement('p')
+    let newMemberContentImage = document.createElement('div')
+    let newMemberPill = document.createElement('i')
+    newMemberPill.classList.add('bi')
+    newMemberPill.classList.add('bi-arrows-fullscreen')
+    newMemberContent.classList.add('member-content')
+    newMemberContent.dataset.member = id
+    newMemberContentImage.classList.add('member-image')
+    newMemberContentName.classList.add('member-name')
+    newMemberContentName.innerText = name
+    newMemberContentImage.style.backgroundImage = url
+    newMemberContent.appendChild(newMemberContentImage)
+    newMemberContent.appendChild(newMemberContentName)
+    newMemberContent.appendChild(newMemberPill)
+    member.appendChild(newMemberContent)
+}
+
 function changeUserProfile(postKey, id) {
     myName.addEventListener('keyup', e => {
         if (e.keyCode != 13) return
-        changeMyName(postKey, myName.value, id)
+        if(e.target.value == '')return
+        changeMyName(postKey, e.target.value, id)
         myName.value = ''
     })
     myImage.addEventListener('keyup', e => {
         if (e.keyCode != 13) return
-        changeMyImg(postKey, myImage.value, id)
+        if(e.target.value == '')return
+        changeMyImg(postKey, e.target.value, id)
         myImage.value = ''
     })
 }
@@ -194,9 +221,13 @@ async function getCameraAndSendStream(id) {
             track.stop();
         });
     }
+    let cameraStatusProp = closeCamera.dataset.status
+    let audioStatusProp = muteBtn.dataset.status
+    let cameraStatus = cameraStatusProp == 'true' ? true : false
+    let audioStatus = audioStatusProp == 'true' ? false : true
     let constructor = {
-        video: videoList.value ? { deviceId: videoList.value } : true,
-        audio: audioList.value ? { deviceId: audioList.value } : true
+        video: videoList.value ? { deviceId: videoList.value } : cameraStatus,
+        audio: audioList.value ? { deviceId: audioList.value } : audioStatus
     }
     try {
         if (location.hash.substring(1) == 'share') {
@@ -236,7 +267,12 @@ async function getCameraAndSendStream(id) {
 
     } catch (e) {
         alert('Please allow your computer open the camera');
-        console.error(e);
+        if(!cameraStatus){
+            closeCamera.click()
+        }
+        if(audioStatus){
+            muteBtn.click()
+        }
     }
 }
 
@@ -289,6 +325,7 @@ function listenNewPersonAdd() {
         if (!data) return
         let sendArr = [data.id, data.audio, data.camera, data.userName, data.imageURL]
         callStream(sendArr, video.srcObject)
+        newTheMember(data.userName, data.imageURL, data.id)
     })
 }
 
@@ -445,15 +482,27 @@ function someButton() {
     })
     chatInput.addEventListener('keyup', e => {
         if (e.keyCode != 13) return
-        sendChatToDataBase(chatInput.value)
+        console.log('hihihihih');
+        if(e.target.value == '') return
+        sendChatToDataBase(e.target.value)
         chatInput.value = ''
     })
-    function sendChatToDataBase(text) {
-        set(ref(db, `${v}/chat`), {
+    async function sendChatToDataBase(text) {
+        await set(ref(db, `${v}/chat`), {
             name: container.getElementsByTagName('p')[0].innerText,
             message: text
         })
+        set(ref(db, `${v}/chat`), {
+            name: container.getElementsByTagName('p')[0].innerText,
+            message: ''
+        })
     }
+    closeMember.addEventListener('click', ()=>{
+        memberContainer.style.display = 'none'
+    })
+    peopleBtn.addEventListener('click', ()=>{
+        memberContainer.style.display = 'flex'
+    })
 }
 
 function listenNewChat() {
@@ -464,14 +513,14 @@ function listenNewChat() {
             return
         }
         const data = snapshot.val()
+        if(data.message == '') return
         let newTextElement = document.createElement('p')
         let newTextNode = document.createTextNode(`${data.name}: ${data.message}`)
         newTextElement.appendChild(newTextNode)
         chatContent.appendChild(newTextElement)
+        chatContent.scrollTop = chatContent.scrollHeight
     })
 }
-
-
 
 async function doFunction(id) {
     checkTheRoom()
