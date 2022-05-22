@@ -30,9 +30,9 @@ const memberContainer = document.getElementById('member-container')
 const member = document.getElementById('member')
 const hangUp = document.getElementById('hang-up')
 const shortName = uniqueNamesGenerator({
-    dictionaries: [adjectives, animals, colors],
-    length: 3,
-    separator: '-'
+    dictionaries: [colors, animals],
+    length: 2,
+    separator: ' '
 });
 let firstTime = false;
 let firstTime1 = false;
@@ -116,6 +116,9 @@ function writeTheGrid(){
             memberLength = 5
         }
     }
+    if(container.dataset.zoom == 'true'){
+        memberLength = 1
+    }
     container.style.gridTemplateColumns = `repeat(${memberLength}, 1fr)`
 }
 
@@ -171,6 +174,25 @@ function newTheMember(name, url, id){
     let newMemberPill = document.createElement('i')
     newMemberPill.classList.add('bi')
     newMemberPill.classList.add('bi-arrows-fullscreen')
+    newMemberPill.addEventListener('click', ()=>{
+        let allTheUser = container.getElementsByTagName('div')
+        if(container.dataset.zoom == 'false'){
+            for(var i = 0; i < allTheUser.length; i++){
+                if(allTheUser[i].dataset.codename != id){
+                    allTheUser[i].style.display = 'none'
+                }
+            }
+            container.dataset.zoom = 'true'
+            container.style.gridTemplateColumns = 'repeat(1, 1fr)'
+        }else{
+            for(var i = 0; i < allTheUser.length; i++){
+                allTheUser[i].style.display = 'flex'
+            }
+            container.dataset.zoom = 'false'
+            writeTheGrid()
+        }
+        
+    })
     newMemberContent.classList.add('member-content')
     newMemberContent.dataset.member = id
     newMemberContentImage.classList.add('member-image')
@@ -367,6 +389,9 @@ function newVideo(remoteId, remoteStream) {
     video.autoplay = true
     videoContainer.appendChild(video)
     videoContainer.appendChild(videoText)
+    if(container.dataset.zoom == 'true'){
+        videoContainer.style.display = 'none'
+    }
     container.appendChild(videoContainer)
     video.muted = remoteId[1]
     changeSomeOneVideoToImage(remoteId[0], remoteId[2])
@@ -540,10 +565,18 @@ function listenNewChat() {
         }
         const data = snapshot.val()
         if(data.message == '') return
+        let newTextElementContainer = document.createElement('div')
         let newTextElement = document.createElement('p')
-        let newTextNode = document.createTextNode(`${data.name}: ${data.message}`)
-        newTextElement.appendChild(newTextNode)
-        chatContent.appendChild(newTextElement)
+        let newTextElementName = document.createElement('p')
+        newTextElementContainer.className = 'd-flex'
+        newTextElementName.className = 'bg-light border rounded mx-1'
+        newTextElementName.innerText = data.name
+        newTextElementName.style.display = 'inline'
+        newTextElement.style.display = 'block'
+        newTextElement.innerText = data.message
+        newTextElementContainer.appendChild(newTextElementName)
+        newTextElementContainer.appendChild(newTextElement)
+        chatContent.appendChild(newTextElementContainer)
         chatContent.scrollTop = chatContent.scrollHeight
     })
 }
