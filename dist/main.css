@@ -39,7 +39,8 @@ html, body{
 
 .videoContainer{
     max-width: 100%;
-    min-height: 200px;
+    height: 100%;
+    min-height: 300px;
     border-radius: 0.5rem;
     background-repeat: no-repeat;
     background-size: cover;
